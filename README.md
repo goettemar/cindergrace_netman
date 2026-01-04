@@ -16,11 +16,22 @@ pip install cindergrace-netman
 
 ## Verwendung
 
-```python
-from cindergrace_netman import example
+```bash
+# Gradio UI starten
+cindergrace-netman ui
 
-# TODO: Beispielcode
+# Download-Limit auf 60% einer 100 Mbit Leitung setzen
+sudo cindergrace-netman limit --percent 60 --base-mbit 100
+
+# Limit entfernen
+sudo cindergrace-netman clear
+
+# Tray-Icon starten
+cindergrace-netman tray
 ```
+
+> Hinweis: Das Setzen von Limits via `tc` erfordert Root-Rechte.
+> Fuer Download-Limits wird ein IFB-Device (`ifb0`) erstellt.
 
 ## Entwicklung
 

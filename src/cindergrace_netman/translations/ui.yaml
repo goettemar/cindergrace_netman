@@ -1,0 +1,112 @@
+# NetMan UI Translations
+# Auto-detected from browser language, fallback to English
+
+en:
+  # === Header ===
+  app_title: "CinderGrace Projects - NetMan"
+  app_subtitle: "Network Limits & Checks"
+
+  # === Status Panel ===
+  status: "Status"
+  status_active: "active"
+  status_inactive: "off"
+  default_route: "Default Route"
+  dsl: "DSL"
+  limit: "Limit"
+
+  # === Settings ===
+  interface: "Interface"
+  interface_active: "active"
+  dsl_speed: "DSL Speed (Mbit/s)"
+  limit_percent: "Limit in % (based on DSL speed)"
+  limit_enabled: "Limit enabled"
+
+  # === Buttons ===
+  apply: "Apply"
+  refresh: "Refresh"
+  start_ping: "Start Ping"
+  download_test: "Download Test"
+
+  # === Connection Check ===
+  check_connection: "Check Connection"
+  ping_host: "Ping Host"
+  packets: "Packets"
+  interval_s: "Interval (s)"
+  download_url: "Download URL"
+  max_mb: "Max. MB"
+
+  # === Results ===
+  ping_result: "Ping"
+  transmitted: "Transmitted"
+  received: "Received"
+  packet_loss: "Packet Loss"
+  min_avg_max_jitter: "Min/Avg/Max/Jitter"
+
+  download_result: "Download Test"
+  data: "Data"
+  time: "Time"
+  rate: "Rate"
+
+  # === Messages ===
+  no_interface: "No interface selected."
+  error_enable: "Error enabling"
+  error_disable: "Error disabling"
+  limit_active_msg: "Limit active"
+  limit_disabled: "Limit disabled."
+  ping_failed: "Ping failed"
+  download_failed: "Download test failed"
+
+de:
+  # === Header ===
+  app_title: "CinderGrace Projects - NetMan"
+  app_subtitle: "Netzwerk-Limits & Checks"
+
+  # === Status Panel ===
+  status: "Status"
+  status_active: "aktiv"
+  status_inactive: "aus"
+  default_route: "Standard-Route"
+  dsl: "DSL"
+  limit: "Limit"
+
+  # === Settings ===
+  interface: "Interface"
+  interface_active: "aktiv"
+  dsl_speed: "DSL-Geschwindigkeit (Mbit/s)"
+  limit_percent: "Limit in % (bezogen auf DSL-Geschwindigkeit)"
+  limit_enabled: "Limit aktiv"
+
+  # === Buttons ===
+  apply: "Uebernehmen"
+  refresh: "Aktualisieren"
+  start_ping: "Ping starten"
+  download_test: "Download-Test"
+
+  # === Connection Check ===
+  check_connection: "Verbindung pruefen"
+  ping_host: "Ping Host"
+  packets: "Pakete"
+  interval_s: "Intervall (s)"
+  download_url: "Download URL"
+  max_mb: "Max. MB"
+
+  # === Results ===
+  ping_result: "Ping"
+  transmitted: "Uebertragen"
+  received: "Empfangen"
+  packet_loss: "Paketverlust"
+  min_avg_max_jitter: "Min/Avg/Max/Jitter"
+
+  download_result: "Download-Test"
+  data: "Daten"
+  time: "Zeit"
+  rate: "Rate"
+
+  # === Messages ===
+  no_interface: "Kein Interface ausgewaehlt."
+  error_enable: "Fehler beim Aktivieren"
+  error_disable: "Fehler beim Deaktivieren"
+  limit_active_msg: "Limit aktiv"
+  limit_disabled: "Limit deaktiviert."
+  ping_failed: "Ping fehlgeschlagen"
+  download_failed: "Download-Test fehlgeschlagen"

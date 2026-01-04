@@ -20,7 +20,13 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
-dependencies = []
+dependencies = [
+    "gradio>=5.0",
+    "gradio-i18n>=0.0.12",
+    "pystray>=0.19",
+    "pillow>=10.0",
+    "pyyaml>=6.0",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -28,6 +34,9 @@ dev = [
     "pytest-cov>=4.0",
     "ruff>=0.1.0",
 ]
+
+[project.scripts]
+cindergrace-netman = "cindergrace_netman.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/goettemar/cindergrace_netman"
