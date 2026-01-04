@@ -1,5 +1,7 @@
 # cindergrace_netman
 
+> Hinweis: Dieses Repository ist ein Hobby-/Experimentierprojekt. Es handelt sich nicht um ein gewerbliches Angebot (keine Auftragsannahme, keine Garantien, kein Supportversprechen).
+
 ![Status](https://img.shields.io/badge/Status-Alpha-red)
 
 > ⚠️ **Alpha** - In aktiver Entwicklung, nicht für Produktion geeignet.
