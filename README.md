@@ -13,6 +13,12 @@
 
 Network bandwidth management tool for Linux. Limit your download speed to avoid saturating your connection when downloading large files (AI models, game updates, etc.) while sharing bandwidth with others.
 
+## Screenshots
+
+![NetMan UI - Main](docs/images/netman-01.png)
+
+![NetMan UI - Tests](docs/images/netman-02.png)
+
 ## Features
 
 - **Bandwidth Limiting**: Set download limits as percentage of your DSL/fiber speed
