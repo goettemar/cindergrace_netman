@@ -51,3 +51,8 @@ state.json
 
 # Jupyter
 .ipynb_checkpoints/
+
+# AI Tooling (internal development files)
+CLAUDE.md
+AGENTS.md
+.ki-faq.json
