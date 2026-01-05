@@ -36,5 +36,18 @@ Thumbs.db
 .env
 .env.local
 
+# Security / Secrets
+*.pem
+*.key
+credentials.json
+
+# Data / State
+*.db
+state.json
+*_cache.json
+
+# Temp (KI-Workspace internal)
+/temp
+
 # Jupyter
 .ipynb_checkpoints/

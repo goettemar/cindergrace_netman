@@ -1,5 +1,8 @@
 # cindergrace_netman
 
+**Status:** Final
+
+
 > **Note:** This repository is a hobby/experimental project. It is not a commercial offering (no contract work, no warranties, no support promises).
 
 ![Status](https://img.shields.io/badge/Status-Alpha-red)
