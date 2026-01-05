@@ -14,7 +14,13 @@ from .net import (
     get_default_interface,
     list_interfaces_with_info,
 )
-from .state import load_state, save_state
+from .state import (
+    load_state,
+    save_state,
+    is_autostart_enabled,
+    enable_autostart,
+    disable_autostart,
+)
 
 # Translation file
 TRANSLATIONS = Path(__file__).parent / "translations" / "ui.yaml"
@@ -226,33 +232,58 @@ def _get_interface_choices() -> list[tuple[str, str]]:
     return choices
 
 
+def _apply_saved_limit() -> None:
+    """Apply saved limit on startup if enabled in state."""
+    state = load_state()
+    if not state.get("enabled"):
+        return
+
+    iface = state["iface"] or get_default_interface()
+    if not iface:
+        return
+
+    base = state["base_mbit"]
+    percent = state["percent"]
+    rate = base * percent / 100
+
+    try:
+        apply_limit(iface, rate)
+    except NetmanError:
+        # Silently fail on startup - user will see status
+        pass
+
+
 def _format_status(lang: str) -> str:
     """Format current status as markdown string (called dynamically)."""
     state = load_state()
     iface = state["iface"] or get_default_interface() or "?"
-
-    if state["enabled"]:
-        status_text = f"✅ **{_('status_active')}**"
-    else:
-        status_text = f"⭕ {_('status_inactive')}"
-
-    percent = state["percent"]
     base = state["base_mbit"]
-    rate = base * percent / 100
 
     default_iface = get_default_interface()
     route_marker = f"⬤ {_('default_route')}" if iface == default_iface else ""
 
+    if state["enabled"]:
+        percent = state["percent"]
+        rate = base * percent / 100
+        status_text = f"🔴 **{_('limit')} {_('status_active')}:** {percent}% = {rate:.2f} Mbit/s"
+    else:
+        status_text = f"🟢 {_('no_limit')}"
+
     return (
         f"**{_('status')}:** {status_text}  |  "
         f"**{_('interface')}:** `{iface}` {route_marker}  |  "
-        f"**{_('dsl')}:** {base} Mbit/s  |  "
-        f"**{_('limit')}:** {percent}% = **{rate:.2f} Mbit/s**"
+        f"**{_('dsl')}:** {base} Mbit/s"
     )
 
 
 def _apply_settings(
-    enable: bool, percent: int, base_mbit: int, iface: str, download_url: str, lang: str
+    enable: bool,
+    percent: int,
+    base_mbit: int,
+    iface: str,
+    download_url: str,
+    ping_host_val: str,
+    lang: str,
 ) -> str:
     """Apply network limit settings."""
     if not iface:
@@ -262,6 +293,7 @@ def _apply_settings(
     state["base_mbit"] = int(base_mbit)
     state["iface"] = iface
     state["download_url"] = download_url
+    state["ping_host"] = ping_host_val
 
     if enable:
         rate = base_mbit * percent / 100
@@ -324,74 +356,155 @@ def _run_download(url: str, max_mb: int, lang: str) -> str:
     )
 
 
+def _save_language(new_lang: str) -> None:
+    """Save language preference to config."""
+    state = load_state()
+    state["language"] = new_lang
+    save_state(state)
+
+
+def _save_settings(
+    dsl_speed: int, ping_host_val: str, download_url_val: str, new_lang: str
+) -> str:
+    """Save all settings to config."""
+    state = load_state()
+    state["base_mbit"] = int(dsl_speed)
+    state["ping_host"] = ping_host_val
+    state["download_url"] = download_url_val
+    state["language"] = new_lang
+    save_state(state)
+    return _("settings_saved")
+
+
 def build_app() -> gr.Blocks:
-    """Build the Gradio application with i18n support."""
+    """Build the Gradio application with i18n support and tabs."""
+    # Apply saved limit on startup (for autostart)
+    _apply_saved_limit()
+
     state = load_state()
     choices = _get_interface_choices()
     interface_names = [c[1] for c in choices]
     default_iface = state["iface"] or get_default_interface() or (
         interface_names[0] if interface_names else ""
     )
+    saved_lang = state.get("language", "en")
 
     with gr.Blocks(css=CSS, title="CinderGrace Projects - NetMan") as app:
-        with Translate(str(TRANSLATIONS), placeholder_langs=["en", "de"]) as lang:
-            # Header with logo - static, NOT part of i18n
+        with Translate(
+            str(TRANSLATIONS),
+            placeholder_langs=["en", "de"],
+        ) as lang:
+            # Set initial language from config
+            lang.value = saved_lang
+
+            # Header with logo
             gr.HTML(f'''
             <div class="app-header">
                 {LOGO_SVG}
                 <div>
                     <h1 style="margin:0 !important; font-size:1.8em !important;">CinderGrace Projects - NetMan</h1>
-                    <div class="subtitle">{_("app_subtitle")}</div>
                 </div>
             </div>
             ''')
 
-            with gr.Group(elem_classes=["panel"]):
-                status_md = gr.Markdown()  # Will be populated on load
-                with gr.Row():
-                    iface_dropdown = gr.Dropdown(
-                        choices=choices,
-                        value=default_iface,
-                        label=_("interface"),
-                        interactive=True,
-                    )
-                    base_mbit = gr.Number(
-                        value=state["base_mbit"],
-                        precision=0,
-                        label=_("dsl_speed"),
-                    )
-                    percent = gr.Slider(
-                        minimum=1,
-                        maximum=100,
-                        step=1,
-                        value=state["percent"],
-                        label=_("limit_percent"),
-                    )
-                    enable = gr.Checkbox(value=state["enabled"], label=_("limit_enabled"))
-                with gr.Row():
-                    apply_btn = gr.Button(_("apply"), variant="primary")
-                    refresh_btn = gr.Button(_("refresh"))
-                action_out = gr.Markdown()
+            # Tab labels based on saved language
+            tab_network_label = "Netzwerk" if saved_lang == "de" else "Network"
+            tab_settings_label = "Einstellungen" if saved_lang == "de" else "Settings"
 
-            with gr.Group(elem_classes=["panel"]):
-                gr.Markdown(lambda: f"## {_('check_connection')}")
-                with gr.Row():
-                    ping_host = gr.Textbox(value="8.8.8.8", label=_("ping_host"))
-                    ping_count = gr.Slider(1, 20, value=6, step=1, label=_("packets"))
-                    ping_interval = gr.Slider(
-                        0.2, 1.0, value=0.3, step=0.1, label=_("interval_s")
-                    )
-                    ping_btn = gr.Button(_("start_ping"))
-                ping_out = gr.Markdown()
+            with gr.Tabs():
+                # === TAB 1: Network ===
+                with gr.TabItem(tab_network_label):
+                    with gr.Group(elem_classes=["panel"]):
+                        status_md = gr.Markdown()
+                        with gr.Row():
+                            iface_dropdown = gr.Dropdown(
+                                choices=choices,
+                                value=default_iface,
+                                label=_("interface"),
+                                interactive=True,
+                            )
+                            percent = gr.Slider(
+                                minimum=1,
+                                maximum=100,
+                                step=1,
+                                value=state["percent"],
+                                label=_("limit_percent"),
+                            )
+                        with gr.Row():
+                            # Toggle button - text changes based on state
+                            toggle_label = _("disable_limit") if state["enabled"] else _("enable_limit")
+                            toggle_variant = "stop" if state["enabled"] else "primary"
+                            toggle_btn = gr.Button(toggle_label, variant=toggle_variant)
+                            refresh_btn = gr.Button(_("refresh"))
 
-                with gr.Row():
-                    dl_url = gr.Textbox(
-                        value=state.get("download_url", "https://speed.hetzner.de/10MB.bin"),
-                        label=_("download_url"),
-                    )
-                    dl_size = gr.Slider(1, 50, value=10, step=1, label=_("max_mb"))
-                    dl_btn = gr.Button(_("download_test"))
-                dl_out = gr.Markdown()
+                    with gr.Group(elem_classes=["panel"]):
+                        gr.Markdown(lambda: f"## {_('check_connection')}")
+                        with gr.Row():
+                            ping_count = gr.Slider(
+                                1, 20, value=6, step=1, label=_("packets")
+                            )
+                            ping_interval = gr.Slider(
+                                0.2, 1.0, value=0.3, step=0.1, label=_("interval_s")
+                            )
+                            ping_btn = gr.Button(_("start_ping"))
+                        ping_out = gr.Markdown()
+
+                        with gr.Row():
+                            dl_size = gr.Slider(
+                                1, 100, value=10, step=1, label=_("max_mb")
+                            )
+                            dl_btn = gr.Button(_("download_test"))
+                        dl_out = gr.Markdown()
+
+                # === TAB 2: Settings ===
+                with gr.TabItem(tab_settings_label):
+                    with gr.Group(elem_classes=["panel"]):
+                        gr.Markdown(f"## {_('settings')}")
+                        lang_dropdown = gr.Dropdown(
+                            choices=[("English", "en"), ("Deutsch", "de")],
+                            value=saved_lang,
+                            label=_("language"),
+                            interactive=True,
+                        )
+                        settings_dsl = gr.Number(
+                            value=state["base_mbit"],
+                            precision=0,
+                            label=_("dsl_speed"),
+                        )
+                        settings_ping_host = gr.Textbox(
+                            value=state.get("ping_host", "8.8.8.8"),
+                            label=_("default_ping_host"),
+                        )
+                        settings_download_url = gr.Textbox(
+                            value=state.get(
+                                "download_url", "https://ash-speed.hetzner.com/100MB.bin"
+                            ),
+                            label=_("default_download_url"),
+                        )
+                        # Autostart toggle
+                        autostart_current = is_autostart_enabled()
+                        autostart_label = (
+                            _("autostart_disabled")
+                            if not autostart_current
+                            else _("autostart_enabled")
+                        )
+                        autostart_variant = "primary" if not autostart_current else "stop"
+                        with gr.Row():
+                            gr.Markdown(f"**{_('autostart')}:** {_('autostart_desc')}")
+                        autostart_btn = gr.Button(autostart_label, variant=autostart_variant)
+                        autostart_out = gr.Markdown()
+
+                        save_settings_btn = gr.Button(
+                            _("save_settings"), variant="primary"
+                        )
+                        settings_out = gr.Markdown()
+
+            # Hidden state for settings values (used by network tab)
+            current_dsl = gr.State(value=state["base_mbit"])
+            current_ping_host = gr.State(value=state.get("ping_host", "8.8.8.8"))
+            current_download_url = gr.State(
+                value=state.get("download_url", "https://ash-speed.hetzner.com/100MB.bin")
+            )
 
             # Initialize dynamic status on page load
             app.load(
@@ -400,30 +513,147 @@ def build_app() -> gr.Blocks:
                 outputs=[status_md],
             )
 
-            # Event handlers
-            apply_btn.click(
-                _apply_settings,
-                inputs=[enable, percent, base_mbit, iface_dropdown, dl_url, lang],
-                outputs=action_out,
-            ).then(
-                _refresh_status,
-                inputs=[lang],
-                outputs=[status_md, iface_dropdown],
+            # === Event handlers ===
+
+            # Toggle limit on/off
+            def _toggle_limit(
+                percent_val: int,
+                iface_val: str,
+                dsl_val: int,
+                lang_val: str,
+            ) -> tuple[str, gr.Button]:
+                state = load_state()
+                state["percent"] = int(percent_val)
+                state["iface"] = iface_val
+                currently_enabled = state["enabled"]
+
+                if currently_enabled:
+                    # Disable limit
+                    try:
+                        clear_limit(iface_val)
+                    except NetmanError:
+                        pass  # Ignore errors when disabling
+                    state["enabled"] = False
+                    save_state(state)
+                    new_btn = gr.Button(value=_("enable_limit"), variant="primary")
+                else:
+                    # Enable limit
+                    rate = dsl_val * percent_val / 100
+                    try:
+                        apply_limit(iface_val, rate)
+                    except NetmanError:
+                        # Return error but keep button state
+                        status = _format_status(lang_val)
+                        return status, gr.Button(value=_("enable_limit"), variant="primary")
+                    state["enabled"] = True
+                    save_state(state)
+                    new_btn = gr.Button(value=_("disable_limit"), variant="stop")
+
+                status = _format_status(lang_val)
+                return status, new_btn
+
+            toggle_btn.click(
+                _toggle_limit,
+                inputs=[percent, iface_dropdown, current_dsl, lang],
+                outputs=[status_md, toggle_btn],
             )
+
             refresh_btn.click(
                 _refresh_status,
                 inputs=[lang],
                 outputs=[status_md, iface_dropdown],
             )
+
+            # Ping uses current_ping_host from state
+            def _run_ping_wrapper(
+                count: int, interval: float, host: str, lang_val: str
+            ) -> str:
+                return _run_ping(host, count, interval, lang_val)
+
             ping_btn.click(
-                _run_ping,
-                inputs=[ping_host, ping_count, ping_interval, lang],
+                _run_ping_wrapper,
+                inputs=[ping_count, ping_interval, current_ping_host, lang],
                 outputs=ping_out,
             )
+
+            # Download uses current_download_url from state
+            def _run_download_wrapper(max_mb: int, url: str, lang_val: str) -> str:
+                return _run_download(url, max_mb, lang_val)
+
             dl_btn.click(
-                _run_download,
-                inputs=[dl_url, dl_size, lang],
+                _run_download_wrapper,
+                inputs=[dl_size, current_download_url, lang],
                 outputs=dl_out,
+            )
+
+            # Save settings and update hidden states
+            def _save_and_update(
+                dsl: int, ping_host_val: str, dl_url: str, new_lang: str
+            ) -> tuple[str, int, str, str, str]:
+                msg = _save_settings(dsl, ping_host_val, dl_url, new_lang)
+                return msg, dsl, ping_host_val, dl_url, new_lang
+
+            save_settings_btn.click(
+                _save_and_update,
+                inputs=[
+                    settings_dsl,
+                    settings_ping_host,
+                    settings_download_url,
+                    lang_dropdown,
+                ],
+                outputs=[
+                    settings_out,
+                    current_dsl,
+                    current_ping_host,
+                    current_download_url,
+                    lang,
+                ],
+            )
+
+            # Also update lang state when dropdown changes (for immediate i18n)
+            lang_dropdown.change(
+                lambda x: x,
+                inputs=[lang_dropdown],
+                outputs=[lang],
+            )
+
+            # Autostart toggle handler
+            def _toggle_autostart() -> tuple[str, gr.Button]:
+                """Toggle autostart on/off."""
+                currently_enabled = is_autostart_enabled()
+                if currently_enabled:
+                    success = disable_autostart()
+                    if success:
+                        state = load_state()
+                        state["autostart"] = False
+                        save_state(state)
+                        return (
+                            _("autostart_disabled"),
+                            gr.Button(value=_("autostart_disabled"), variant="primary"),
+                        )
+                    return (
+                        _("autostart_error"),
+                        gr.Button(value=_("autostart_enabled"), variant="stop"),
+                    )
+                else:
+                    success = enable_autostart()
+                    if success:
+                        state = load_state()
+                        state["autostart"] = True
+                        save_state(state)
+                        return (
+                            _("autostart_enabled"),
+                            gr.Button(value=_("autostart_enabled"), variant="stop"),
+                        )
+                    return (
+                        _("autostart_error"),
+                        gr.Button(value=_("autostart_disabled"), variant="primary"),
+                    )
+
+            autostart_btn.click(
+                _toggle_autostart,
+                inputs=[],
+                outputs=[autostart_out, autostart_btn],
             )
 
     return app

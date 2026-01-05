@@ -2,9 +2,9 @@
 # Auto-detected from browser language, fallback to English
 
 en:
-  # === Header ===
-  app_title: "CinderGrace Projects - NetMan"
-  app_subtitle: "Network Limits & Checks"
+  # === Tabs ===
+  tab_network: "Network"
+  tab_settings: "Settings"
 
   # === Status Panel ===
   status: "Status"
@@ -19,13 +19,15 @@ en:
   interface_active: "active"
   dsl_speed: "DSL Speed (Mbit/s)"
   limit_percent: "Limit in % (based on DSL speed)"
-  limit_enabled: "Limit enabled"
+  limit_enabled: "Enable Limit"
 
   # === Buttons ===
   apply: "Apply"
   refresh: "Refresh"
   start_ping: "Start Ping"
   download_test: "Download Test"
+  enable_limit: "Enable Limit"
+  disable_limit: "Disable Limit"
 
   # === Connection Check ===
   check_connection: "Check Connection"
@@ -47,7 +49,21 @@ en:
   time: "Time"
   rate: "Rate"
 
+  # === Settings ===
+  settings: "Settings"
+  language: "Language"
+  default_ping_host: "Default Ping Host"
+  default_download_url: "Default Download URL"
+  autostart: "Autostart"
+  autostart_desc: "Start NetMan automatically on login"
+  autostart_enabled: "Autostart enabled"
+  autostart_disabled: "Autostart disabled"
+  autostart_error: "Could not change autostart setting"
+  save_settings: "Save Settings"
+  settings_saved: "Settings saved."
+
   # === Messages ===
+  no_limit: "No limit active"
   no_interface: "No interface selected."
   error_enable: "Error enabling"
   error_disable: "Error disabling"
@@ -57,9 +73,9 @@ en:
   download_failed: "Download test failed"
 
 de:
-  # === Header ===
-  app_title: "CinderGrace Projects - NetMan"
-  app_subtitle: "Netzwerk-Limits & Checks"
+  # === Tabs ===
+  tab_network: "Netzwerk"
+  tab_settings: "Einstellungen"
 
   # === Status Panel ===
   status: "Status"
@@ -74,13 +90,15 @@ de:
   interface_active: "aktiv"
   dsl_speed: "DSL-Geschwindigkeit (Mbit/s)"
   limit_percent: "Limit in % (bezogen auf DSL-Geschwindigkeit)"
-  limit_enabled: "Limit aktiv"
+  limit_enabled: "Limit aktivieren"
 
   # === Buttons ===
   apply: "Uebernehmen"
   refresh: "Aktualisieren"
   start_ping: "Ping starten"
   download_test: "Download-Test"
+  enable_limit: "Limit aktivieren"
+  disable_limit: "Limit deaktivieren"
 
   # === Connection Check ===
   check_connection: "Verbindung pruefen"
@@ -102,7 +120,21 @@ de:
   time: "Zeit"
   rate: "Rate"
 
+  # === Settings ===
+  settings: "Einstellungen"
+  language: "Sprache"
+  default_ping_host: "Standard Ping Host"
+  default_download_url: "Standard Download URL"
+  autostart: "Autostart"
+  autostart_desc: "NetMan beim Anmelden automatisch starten"
+  autostart_enabled: "Autostart aktiviert"
+  autostart_disabled: "Autostart deaktiviert"
+  autostart_error: "Autostart konnte nicht geaendert werden"
+  save_settings: "Einstellungen speichern"
+  settings_saved: "Einstellungen gespeichert."
+
   # === Messages ===
+  no_limit: "Kein Limit aktiv"
   no_interface: "Kein Interface ausgewaehlt."
   error_enable: "Fehler beim Aktivieren"
   error_disable: "Fehler beim Deaktivieren"

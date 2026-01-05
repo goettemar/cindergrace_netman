@@ -52,8 +52,8 @@ def get_default_interface() -> str | None:
 
 
 def get_interface_speed(iface: str) -> int | None:
-    """Gibt die Link-Geschwindigkeit in Mbit/s zurueck, oder None wenn nicht verfuegbar."""
-    # Methode 1: /sys/class/net/<iface>/speed
+    """Return link speed in Mbit/s, or None if not available."""
+    # Method 1: /sys/class/net/<iface>/speed
     speed_file = f"/sys/class/net/{iface}/speed"
     try:
         with open(speed_file) as f:
@@ -61,10 +61,10 @@ def get_interface_speed(iface: str) -> int | None:
             if speed > 0:
                 return speed
     except (FileNotFoundError, ValueError, PermissionError, OSError):
-        # OSError kann bei virtuellen Interfaces auftreten
+        # OSError can occur with virtual interfaces
         pass
 
-    # Methode 2: ethtool (falls verfuegbar)
+    # Method 2: ethtool (if available)
     try:
         output = _run(["ethtool", iface])
         for line in output.splitlines():
@@ -79,7 +79,7 @@ def get_interface_speed(iface: str) -> int | None:
 
 
 def get_interface_state(iface: str) -> str:
-    """Gibt den Verbindungsstatus zurueck: up, down, oder unknown."""
+    """Return connection state: up, down, or unknown."""
     state_file = f"/sys/class/net/{iface}/operstate"
     try:
         with open(state_file) as f:
@@ -89,12 +89,12 @@ def get_interface_state(iface: str) -> str:
 
 
 def list_interfaces_with_info() -> list[dict]:
-    """Gibt alle Interfaces mit Speed und Status zurueck."""
+    """Return all interfaces with speed and status info."""
     default_iface = get_default_interface()
     interfaces = []
 
     for iface in list_interfaces():
-        # Virtuelle/System-Interfaces ueberspringen
+        # Skip virtual/system interfaces
         if iface in ("lo", "ifb0", "ifb1"):
             continue
 
