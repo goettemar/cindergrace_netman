@@ -1,7 +1,6 @@
 """Tests for CLI module."""
 
 import argparse
-from io import StringIO
 from unittest.mock import MagicMock, patch
 
 import pytest

@@ -1,8 +1,7 @@
 """Tests for UI helper functions."""
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
-import pytest
 
 
 def test_get_tab_labels_english():

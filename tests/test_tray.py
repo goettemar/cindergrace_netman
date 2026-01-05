@@ -3,7 +3,6 @@
 from unittest.mock import patch, MagicMock
 
 from PIL import Image
-import pytest
 
 from cindergrace_netman.tray import _make_icon, _tooltip, run_tray
 
