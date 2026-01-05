@@ -376,28 +376,135 @@ def _save_settings(
     return _("settings_saved")
 
 
+def _toggle_limit(
+    percent_val: int,
+    iface_val: str,
+    dsl_val: int,
+    lang_val: str,
+) -> tuple[str, gr.Button]:
+    """Toggle network limit on/off."""
+    state = load_state()
+    state["percent"] = int(percent_val)
+    state["iface"] = iface_val
+    currently_enabled = state["enabled"]
+
+    if currently_enabled:
+        # Disable limit
+        try:
+            clear_limit(iface_val)
+        except NetmanError:
+            pass  # Ignore errors when disabling
+        state["enabled"] = False
+        save_state(state)
+        new_btn = gr.Button(value=_("enable_limit"), variant="primary")
+    else:
+        # Enable limit
+        rate = dsl_val * percent_val / 100
+        try:
+            apply_limit(iface_val, rate)
+        except NetmanError:
+            # Return error but keep button state
+            status = _format_status(lang_val)
+            return status, gr.Button(value=_("enable_limit"), variant="primary")
+        state["enabled"] = True
+        save_state(state)
+        new_btn = gr.Button(value=_("disable_limit"), variant="stop")
+
+    status = _format_status(lang_val)
+    return status, new_btn
+
+
+def _toggle_autostart() -> tuple[str, gr.Button]:
+    """Toggle autostart on/off."""
+    currently_enabled = is_autostart_enabled()
+    if currently_enabled:
+        success = disable_autostart()
+        if success:
+            state = load_state()
+            state["autostart"] = False
+            save_state(state)
+            return (
+                _("autostart_disabled"),
+                gr.Button(value=_("autostart_disabled"), variant="primary"),
+            )
+        return (
+            _("autostart_error"),
+            gr.Button(value=_("autostart_enabled"), variant="stop"),
+        )
+    else:
+        success = enable_autostart()
+        if success:
+            state = load_state()
+            state["autostart"] = True
+            save_state(state)
+            return (
+                _("autostart_enabled"),
+                gr.Button(value=_("autostart_enabled"), variant="stop"),
+            )
+        return (
+            _("autostart_error"),
+            gr.Button(value=_("autostart_disabled"), variant="primary"),
+        )
+
+
+def _save_and_update(
+    dsl: int, ping_host_val: str, dl_url: str, new_lang: str
+) -> tuple[str, int, str, str, str]:
+    """Save settings and return updated values for state."""
+    msg = _save_settings(dsl, ping_host_val, dl_url, new_lang)
+    return msg, dsl, ping_host_val, dl_url, new_lang
+
+
+def _get_default_interface_value(state: dict, interface_names: list[str]) -> str:
+    """Get default interface from state or system."""
+    stored = state.get("iface")
+    if stored:
+        return stored
+    default = get_default_interface()
+    if default:
+        return default
+    return interface_names[0] if interface_names else ""
+
+
+def _get_toggle_button_props(enabled: bool) -> tuple[str, str]:
+    """Get label and variant for toggle button based on limit state."""
+    if enabled:
+        return _("disable_limit"), "stop"
+    return _("enable_limit"), "primary"
+
+
+def _get_autostart_button_props(enabled: bool) -> tuple[str, str]:
+    """Get label and variant for autostart button."""
+    if enabled:
+        return _("autostart_enabled"), "stop"
+    return _("autostart_disabled"), "primary"
+
+
+def _get_tab_labels(lang: str) -> tuple[str, str]:
+    """Get localized tab labels."""
+    if lang == "de":
+        return "Netzwerk", "Einstellungen"
+    return "Network", "Settings"
+
+
 def build_app() -> gr.Blocks:
     """Build the Gradio application with i18n support and tabs."""
-    # Apply saved limit on startup (for autostart)
     _apply_saved_limit()
 
     state = load_state()
     choices = _get_interface_choices()
     interface_names = [c[1] for c in choices]
-    default_iface = state["iface"] or get_default_interface() or (
-        interface_names[0] if interface_names else ""
-    )
+    default_iface = _get_default_interface_value(state, interface_names)
     saved_lang = state.get("language", "en")
+    tab_network_label, tab_settings_label = _get_tab_labels(saved_lang)
 
     with gr.Blocks(css=CSS, title="CinderGrace Projects - NetMan") as app:
         with Translate(
             str(TRANSLATIONS),
             placeholder_langs=["en", "de"],
         ) as lang:
-            # Set initial language from config
             lang.value = saved_lang
 
-            # Header with logo
             gr.HTML(f'''
             <div class="app-header">
                 {LOGO_SVG}
@@ -407,12 +514,7 @@ def build_app() -> gr.Blocks:
             </div>
             ''')
 
-            # Tab labels based on saved language
-            tab_network_label = "Netzwerk" if saved_lang == "de" else "Network"
-            tab_settings_label = "Einstellungen" if saved_lang == "de" else "Settings"
-
             with gr.Tabs():
-                # === TAB 1: Network ===
                 with gr.TabItem(tab_network_label):
                     with gr.Group(elem_classes=["panel"]):
                         status_md = gr.Markdown()
@@ -431,9 +533,7 @@ def build_app() -> gr.Blocks:
                                 label=_("limit_percent"),
                             )
                         with gr.Row():
-                            # Toggle button - text changes based on state
-                            toggle_label = _("disable_limit") if state["enabled"] else _("enable_limit")
-                            toggle_variant = "stop" if state["enabled"] else "primary"
+                            toggle_label, toggle_variant = _get_toggle_button_props(state["enabled"])
                             toggle_btn = gr.Button(toggle_label, variant=toggle_variant)
                             refresh_btn = gr.Button(_("refresh"))
 
@@ -481,14 +581,9 @@ def build_app() -> gr.Blocks:
                             ),
                             label=_("default_download_url"),
                         )
-                        # Autostart toggle
-                        autostart_current = is_autostart_enabled()
-                        autostart_label = (
-                            _("autostart_disabled")
-                            if not autostart_current
-                            else _("autostart_enabled")
+                        autostart_label, autostart_variant = _get_autostart_button_props(
+                            is_autostart_enabled()
                         )
-                        autostart_variant = "primary" if not autostart_current else "stop"
                         with gr.Row():
                             gr.Markdown(f"**{_('autostart')}:** {_('autostart_desc')}")
                         autostart_btn = gr.Button(autostart_label, variant=autostart_variant)
@@ -513,44 +608,7 @@ def build_app() -> gr.Blocks:
                 outputs=[status_md],
             )
 
-            # === Event handlers ===
-
-            # Toggle limit on/off
-            def _toggle_limit(
-                percent_val: int,
-                iface_val: str,
-                dsl_val: int,
-                lang_val: str,
-            ) -> tuple[str, gr.Button]:
-                state = load_state()
-                state["percent"] = int(percent_val)
-                state["iface"] = iface_val
-                currently_enabled = state["enabled"]
-
-                if currently_enabled:
-                    # Disable limit
-                    try:
-                        clear_limit(iface_val)
-                    except NetmanError:
-                        pass  # Ignore errors when disabling
-                    state["enabled"] = False
-                    save_state(state)
-                    new_btn = gr.Button(value=_("enable_limit"), variant="primary")
-                else:
-                    # Enable limit
-                    rate = dsl_val * percent_val / 100
-                    try:
-                        apply_limit(iface_val, rate)
-                    except NetmanError:
-                        # Return error but keep button state
-                        status = _format_status(lang_val)
-                        return status, gr.Button(value=_("enable_limit"), variant="primary")
-                    state["enabled"] = True
-                    save_state(state)
-                    new_btn = gr.Button(value=_("disable_limit"), variant="stop")
-
-                status = _format_status(lang_val)
-                return status, new_btn
+            # === Event handlers (using module-level functions) ===
 
             toggle_btn.click(
                 _toggle_limit,
@@ -564,34 +622,17 @@ def build_app() -> gr.Blocks:
                 outputs=[status_md, iface_dropdown],
             )
 
-            # Ping uses current_ping_host from state
-            def _run_ping_wrapper(
-                count: int, interval: float, host: str, lang_val: str
-            ) -> str:
-                return _run_ping(host, count, interval, lang_val)
-
             ping_btn.click(
-                _run_ping_wrapper,
+                lambda c, i, h, l: _run_ping(h, c, i, l),
                 inputs=[ping_count, ping_interval, current_ping_host, lang],
                 outputs=ping_out,
             )
 
-            # Download uses current_download_url from state
-            def _run_download_wrapper(max_mb: int, url: str, lang_val: str) -> str:
-                return _run_download(url, max_mb, lang_val)
-
             dl_btn.click(
-                _run_download_wrapper,
+                lambda s, u, l: _run_download(u, s, l),
                 inputs=[dl_size, current_download_url, lang],
                 outputs=dl_out,
             )
-
-            # Save settings and update hidden states
-            def _save_and_update(
-                dsl: int, ping_host_val: str, dl_url: str, new_lang: str
-            ) -> tuple[str, int, str, str, str]:
-                msg = _save_settings(dsl, ping_host_val, dl_url, new_lang)
-                return msg, dsl, ping_host_val, dl_url, new_lang
 
             save_settings_btn.click(
                 _save_and_update,
@@ -610,45 +651,11 @@ def build_app() -> gr.Blocks:
                 ],
             )
 
-            # Also update lang state when dropdown changes (for immediate i18n)
             lang_dropdown.change(
                 lambda x: x,
                 inputs=[lang_dropdown],
                 outputs=[lang],
             )
-
-            # Autostart toggle handler
-            def _toggle_autostart() -> tuple[str, gr.Button]:
-                """Toggle autostart on/off."""
-                currently_enabled = is_autostart_enabled()
-                if currently_enabled:
-                    success = disable_autostart()
-                    if success:
-                        state = load_state()
-                        state["autostart"] = False
-                        save_state(state)
-                        return (
-                            _("autostart_disabled"),
-                            gr.Button(value=_("autostart_disabled"), variant="primary"),
-                        )
-                    return (
-                        _("autostart_error"),
-                        gr.Button(value=_("autostart_enabled"), variant="stop"),
-                    )
-                else:
-                    success = enable_autostart()
-                    if success:
-                        state = load_state()
-                        state["autostart"] = True
-                        save_state(state)
-                        return (
-                            _("autostart_enabled"),
-                            gr.Button(value=_("autostart_enabled"), variant="stop"),
-                        )
-                    return (
-                        _("autostart_error"),
-                        gr.Button(value=_("autostart_disabled"), variant="primary"),
-                    )
 
             autostart_btn.click(
                 _toggle_autostart,
