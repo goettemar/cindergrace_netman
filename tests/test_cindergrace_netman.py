@@ -1,7 +1,7 @@
-"""Tests für cindergrace_netman."""
+"""Tests for cindergrace_netman."""
 
 
 def test_import():
-    """Test ob Import funktioniert."""
+    """Test that import works."""
     from cindergrace_netman import __version__
     assert __version__ == "0.1.0"
