@@ -1,7 +1,6 @@
 import re
 import subprocess
 
-
 IFB_DEVICE = "ifb0"
 
 
@@ -21,6 +20,7 @@ def _run(cmd: list[str]) -> str:
         stderr = exc.stderr.strip()
         raise NetmanError(stderr or "Command failed") from exc
     return completed.stdout.strip()
+
 
 def _run_ignore(cmd: list[str]) -> None:
     try:
@@ -102,12 +102,14 @@ def list_interfaces_with_info() -> list[dict]:
         state = get_interface_state(iface)
         is_default = iface == default_iface
 
-        interfaces.append({
-            "name": iface,
-            "speed_mbit": speed,
-            "state": state,
-            "is_default": is_default,
-        })
+        interfaces.append(
+            {
+                "name": iface,
+                "speed_mbit": speed,
+                "state": state,
+                "is_default": is_default,
+            }
+        )
 
     return interfaces
 

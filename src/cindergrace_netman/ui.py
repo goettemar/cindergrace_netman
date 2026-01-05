@@ -1,10 +1,12 @@
 """NetMan Gradio UI with i18n support."""
+
 from __future__ import annotations
 
 from pathlib import Path
 
 import gradio as gr
-from gradio_i18n import Translate, gettext as _
+from gradio_i18n import Translate
+from gradio_i18n import gettext as _
 
 from .checks import download_test, ping
 from .net import (
@@ -15,11 +17,11 @@ from .net import (
     list_interfaces_with_info,
 )
 from .state import (
+    disable_autostart,
+    enable_autostart,
+    is_autostart_enabled,
     load_state,
     save_state,
-    is_autostart_enabled,
-    enable_autostart,
-    disable_autostart,
 )
 
 # Translation file
@@ -196,14 +198,14 @@ input[type="checkbox"] {
 }
 """
 
-LOGO_SVG = '''<svg width="48" height="48" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+LOGO_SVG = """<svg width="48" height="48" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect width="512" height="512" rx="96" fill="white"/>
   <circle cx="256" cy="256" r="200" stroke="#7CC8FF" stroke-width="36" fill="none"/>
   <path d="M 56 256 L 56 490" stroke="#7CC8FF" stroke-width="36" stroke-linecap="round"/>
   <path d="M 420 256 A 164 164 0 1 1 338 114" stroke="#1E5AA8" stroke-width="36" stroke-linecap="round"/>
   <path d="M 420 256 L 320 256" stroke="#1E5AA8" stroke-width="36" stroke-linecap="round"/>
   <path d="M 332 180 A 108 108 0 1 0 332 332" stroke="#7CC8FF" stroke-width="28" stroke-linecap="round"/>
-</svg>'''
+</svg>"""
 
 
 def _get_interface_choices() -> list[tuple[str, str]]:
@@ -319,8 +321,8 @@ def _refresh_status(lang: str) -> tuple[str, gr.Dropdown]:
     state = load_state()
     choices = _get_interface_choices()
     interface_names = [c[1] for c in choices]
-    default_iface = state["iface"] or get_default_interface() or (
-        interface_names[0] if interface_names else ""
+    default_iface = (
+        state["iface"] or get_default_interface() or (interface_names[0] if interface_names else "")
     )
     status = _format_status(lang)
     return status, gr.Dropdown(choices=choices, value=default_iface)
@@ -363,9 +365,7 @@ def _save_language(new_lang: str) -> None:
     save_state(state)
 
 
-def _save_settings(
-    dsl_speed: int, ping_host_val: str, download_url_val: str, new_lang: str
-) -> str:
+def _save_settings(dsl_speed: int, ping_host_val: str, download_url_val: str, new_lang: str) -> str:
     """Save all settings to config."""
     state = load_state()
     state["base_mbit"] = int(dsl_speed)
@@ -505,14 +505,14 @@ def build_app() -> gr.Blocks:
         ) as lang:
             lang.value = saved_lang
 
-            gr.HTML(f'''
+            gr.HTML(f"""
             <div class="app-header">
                 {LOGO_SVG}
                 <div>
                     <h1 style="margin:0 !important; font-size:1.8em !important;">CinderGrace Projects - NetMan</h1>
                 </div>
             </div>
-            ''')
+            """)
 
             with gr.Tabs():
                 with gr.TabItem(tab_network_label):
@@ -533,16 +533,16 @@ def build_app() -> gr.Blocks:
                                 label=_("limit_percent"),
                             )
                         with gr.Row():
-                            toggle_label, toggle_variant = _get_toggle_button_props(state["enabled"])
+                            toggle_label, toggle_variant = _get_toggle_button_props(
+                                state["enabled"]
+                            )
                             toggle_btn = gr.Button(toggle_label, variant=toggle_variant)
                             refresh_btn = gr.Button(_("refresh"))
 
                     with gr.Group(elem_classes=["panel"]):
                         gr.Markdown(lambda: f"## {_('check_connection')}")
                         with gr.Row():
-                            ping_count = gr.Slider(
-                                1, 20, value=6, step=1, label=_("packets")
-                            )
+                            ping_count = gr.Slider(1, 20, value=6, step=1, label=_("packets"))
                             ping_interval = gr.Slider(
                                 0.2, 1.0, value=0.3, step=0.1, label=_("interval_s")
                             )
@@ -550,9 +550,7 @@ def build_app() -> gr.Blocks:
                         ping_out = gr.Markdown()
 
                         with gr.Row():
-                            dl_size = gr.Slider(
-                                1, 100, value=10, step=1, label=_("max_mb")
-                            )
+                            dl_size = gr.Slider(1, 100, value=10, step=1, label=_("max_mb"))
                             dl_btn = gr.Button(_("download_test"))
                         dl_out = gr.Markdown()
 
@@ -589,9 +587,7 @@ def build_app() -> gr.Blocks:
                         autostart_btn = gr.Button(autostart_label, variant=autostart_variant)
                         autostart_out = gr.Markdown()
 
-                        save_settings_btn = gr.Button(
-                            _("save_settings"), variant="primary"
-                        )
+                        save_settings_btn = gr.Button(_("save_settings"), variant="primary")
                         settings_out = gr.Markdown()
 
             # Hidden state for settings values (used by network tab)
@@ -623,13 +619,13 @@ def build_app() -> gr.Blocks:
             )
 
             ping_btn.click(
-                lambda c, i, h, l: _run_ping(h, c, i, l),
+                lambda c, i, h, lang: _run_ping(h, c, i, lang),
                 inputs=[ping_count, ping_interval, current_ping_host, lang],
                 outputs=ping_out,
             )
 
             dl_btn.click(
-                lambda s, u, l: _run_download(u, s, l),
+                lambda s, u, lang: _run_download(u, s, lang),
                 inputs=[dl_size, current_download_url, lang],
                 outputs=dl_out,
             )

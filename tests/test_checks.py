@@ -2,7 +2,7 @@
 
 import pytest
 
-from cindergrace_netman.checks import ping, download_test
+from cindergrace_netman.checks import download_test, ping
 from cindergrace_netman.net import NetmanError
 
 

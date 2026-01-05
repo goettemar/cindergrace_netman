@@ -1,21 +1,21 @@
 """Tests for network utilities."""
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from cindergrace_netman.net import (
     NetmanError,
-    apply_limit,
-    clear_limit,
-    list_interfaces,
-    get_default_interface,
-    get_interface_state,
-    get_interface_speed,
-    list_interfaces_with_info,
     _run,
     _run_ignore,
     _setup_ifb,
+    apply_limit,
+    clear_limit,
+    get_default_interface,
+    get_interface_speed,
+    get_interface_state,
+    list_interfaces,
+    list_interfaces_with_info,
 )
 
 

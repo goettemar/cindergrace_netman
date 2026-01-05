@@ -2,7 +2,6 @@ import json
 import os
 from pathlib import Path
 
-
 DEFAULT_STATE = {
     "enabled": False,
     "percent": 100,
@@ -69,6 +68,7 @@ def get_start_script_path() -> Path:
         return start_sh
     # Fallback: check if installed via pip, use the entry point
     import shutil
+
     entry_point = shutil.which("cindergrace-netman")
     if entry_point:
         return Path(entry_point)
