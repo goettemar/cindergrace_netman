@@ -41,6 +41,10 @@ def ping(host: str, count: int = 4, interval: float = 0.2) -> dict:
 
 
 def download_test(url: str, max_mb: int = 10) -> dict:
+    # Security: Only allow http/https URLs to prevent SSRF via file:// etc.
+    if not url.lower().startswith(("http://", "https://")):
+        raise NetmanError(f"Invalid URL scheme - only http/https allowed: {url}")
+
     max_bytes = max_mb * 1024 * 1024
     start = time.monotonic()
     bytes_read = 0

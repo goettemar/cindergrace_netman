@@ -17,6 +17,16 @@ def _resolve_iface(iface: str | None) -> str:
 
 
 def _cmd_ui(args: argparse.Namespace) -> None:
+    # Security warning for non-localhost exposure
+    if args.host not in ("127.0.0.1", "localhost") or args.share:
+        print("⚠️  WARNUNG: UI wird extern exponiert!")
+        print("   Diese App laeuft mit Root-Rechten und hat KEINE Authentisierung.")
+        print("   Jeder im Netzwerk kann auf dein System zugreifen!")
+        print("   Druecke Ctrl+C zum Abbrechen oder warte 5 Sekunden...\n")
+        import time
+
+        time.sleep(5)
+
     app = build_app()
     app.launch(
         server_name=args.host,
