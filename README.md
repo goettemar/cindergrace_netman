@@ -5,11 +5,9 @@
 
 > **Note:** This repository is a hobby/experimental project. It is not a commercial offering (no contract work, no warranties, no support promises).
 
-![Status](https://img.shields.io/badge/Status-Alpha-red)
+![Status](https://img.shields.io/badge/Status-Final-brightgreen)
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
 ![License](https://img.shields.io/badge/License-PolyForm%20NC-green)
-
-> **Alpha** - Under active development, not suitable for production use.
 
 Network bandwidth management tool for Linux. Limit your download speed to avoid saturating your connection when downloading large files (AI models, game updates, etc.) while sharing bandwidth with others.
 
