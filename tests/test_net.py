@@ -6,11 +6,16 @@ import pytest
 
 from cindergrace_netman.net import (
     NetmanError,
+    apply_limit,
+    clear_limit,
     list_interfaces,
     get_default_interface,
     get_interface_state,
     get_interface_speed,
     list_interfaces_with_info,
+    _run,
+    _run_ignore,
+    _setup_ifb,
 )
 
 
@@ -111,3 +116,130 @@ class TestNetmanError:
         """Test that NetmanError can be raised and caught."""
         with pytest.raises(NetmanError):
             raise NetmanError("test")
+
+
+class TestRun:
+    """Tests for _run helper function."""
+
+    @patch("cindergrace_netman.net.subprocess.run")
+    def test_run_returns_output(self, mock_run):
+        """Test that _run returns command output."""
+        mock_result = MagicMock()
+        mock_result.stdout = "output text\n"
+        mock_run.return_value = mock_result
+        result = _run(["echo", "test"])
+        assert result == "output text"
+
+    @patch("cindergrace_netman.net.subprocess.run")
+    def test_run_raises_on_error(self, mock_run):
+        """Test that _run raises NetmanError on CalledProcessError."""
+        import subprocess
+        mock_run.side_effect = subprocess.CalledProcessError(1, "cmd", stderr="error message")
+        with pytest.raises(NetmanError, match="error message"):
+            _run(["false"])
+
+    @patch("cindergrace_netman.net.subprocess.run")
+    def test_run_raises_with_fallback_message(self, mock_run):
+        """Test that _run uses fallback message when stderr is empty."""
+        import subprocess
+        mock_run.side_effect = subprocess.CalledProcessError(1, "cmd", stderr="")
+        with pytest.raises(NetmanError, match="Command failed"):
+            _run(["false"])
+
+
+class TestRunIgnore:
+    """Tests for _run_ignore helper function."""
+
+    @patch("cindergrace_netman.net._run")
+    def test_run_ignore_calls_run(self, mock_run):
+        """Test that _run_ignore calls _run."""
+        _run_ignore(["echo", "test"])
+        mock_run.assert_called_once_with(["echo", "test"])
+
+    @patch("cindergrace_netman.net._run")
+    def test_run_ignore_ignores_errors(self, mock_run):
+        """Test that _run_ignore ignores NetmanError."""
+        mock_run.side_effect = NetmanError("error")
+        # Should not raise, should return None
+        result = _run_ignore(["false"])
+        assert result is None
+
+
+class TestSetupIfb:
+    """Tests for _setup_ifb function."""
+
+    @patch("cindergrace_netman.net._run")
+    @patch("cindergrace_netman.net._run_ignore")
+    def test_setup_ifb_calls_commands(self, mock_run_ignore, mock_run):
+        """Test that _setup_ifb calls correct commands."""
+        _setup_ifb()
+
+        # Should call modprobe and ip link add (ignored)
+        assert mock_run_ignore.call_count == 2
+
+        # Should call ip link set up
+        mock_run.assert_called_once()
+        args = mock_run.call_args[0][0]
+        assert "ip" in args
+        assert "link" in args
+        assert "up" in args
+
+
+class TestApplyLimit:
+    """Tests for apply_limit function."""
+
+    def test_raises_on_zero_rate(self):
+        """Test that apply_limit raises on zero rate."""
+        with pytest.raises(NetmanError, match="Rate must be > 0"):
+            apply_limit("eth0", 0)
+
+    def test_raises_on_negative_rate(self):
+        """Test that apply_limit raises on negative rate."""
+        with pytest.raises(NetmanError, match="Rate must be > 0"):
+            apply_limit("eth0", -5)
+
+    @patch("cindergrace_netman.net._run")
+    @patch("cindergrace_netman.net._run_ignore")
+    @patch("cindergrace_netman.net._setup_ifb")
+    def test_apply_limit_calls_tc_commands(self, mock_setup, mock_run_ignore, mock_run):
+        """Test that apply_limit calls tc commands."""
+        apply_limit("eth0", 50.0)
+
+        mock_setup.assert_called_once()
+        # Multiple tc commands should be called
+        assert mock_run.call_count >= 3
+
+    @patch("cindergrace_netman.net._run")
+    @patch("cindergrace_netman.net._run_ignore")
+    @patch("cindergrace_netman.net._setup_ifb")
+    def test_apply_limit_formats_rate_correctly(self, mock_setup, mock_run_ignore, mock_run):
+        """Test that rate is formatted correctly without trailing zeros."""
+        apply_limit("eth0", 50.0)
+
+        # Check that one of the calls contains the rate
+        calls = [str(call) for call in mock_run.call_args_list]
+        rate_call = [c for c in calls if "mbit" in c]
+        assert len(rate_call) > 0
+        # Should be "50mbit" not "50.00mbit"
+        assert "50mbit" in str(rate_call[0])
+
+
+class TestClearLimit:
+    """Tests for clear_limit function."""
+
+    @patch("cindergrace_netman.net._run_ignore")
+    def test_clear_limit_calls_cleanup_commands(self, mock_run_ignore):
+        """Test that clear_limit calls cleanup commands."""
+        clear_limit("eth0")
+
+        # Should call multiple cleanup commands
+        assert mock_run_ignore.call_count == 5
+
+    @patch("cindergrace_netman.net._run_ignore")
+    def test_clear_limit_with_different_interface(self, mock_run_ignore):
+        """Test clear_limit with different interface name."""
+        clear_limit("wlan0")
+
+        # Verify interface name is used in calls
+        calls_str = str(mock_run_ignore.call_args_list)
+        assert "wlan0" in calls_str
