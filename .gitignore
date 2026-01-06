@@ -9,8 +9,8 @@ venv/
 ENV/
 
 # Distribution / packaging
-dist/
-build/
+/dist
+/build
 *.egg-info/
 *.egg
 
