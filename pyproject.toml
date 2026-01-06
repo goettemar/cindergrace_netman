@@ -4,17 +4,31 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cindergrace-netman"
-version = "0.1.1"
+version = "0.1.2"
 description = "Network bandwidth management tool for Linux"
 readme = "README.md"
-license = {text = "PolyForm-Noncommercial-1.0.0"}
+license = "PolyForm-Noncommercial-1.0.0"
 requires-python = ">=3.10"
 authors = [
     {name = "goettemar"}
 ]
+keywords = [
+    "network",
+    "bandwidth",
+    "traffic-control",
+    "linux",
+    "tc",
+    "qdisc",
+    "gradio",
+]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: System Administrators",
     "Intended Audience :: Developers",
+    "Topic :: System :: Networking",
+    "Topic :: System :: Systems Administration",
+    "Operating System :: POSIX :: Linux",
+    "Environment :: Web Environment",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
