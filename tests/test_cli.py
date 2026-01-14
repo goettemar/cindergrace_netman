@@ -62,7 +62,8 @@ class TestBuildParser:
         assert args.command == "ui"
         # host defaults to None, resolved via Config.get_server_bind()
         assert args.host is None
-        assert args.port == 7863
+        # port defaults to None, resolved via Config.get_port() from state/env
+        assert args.port is None
         assert args.share is False
 
     def test_ui_command_custom_values(self):

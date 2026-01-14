@@ -6,6 +6,7 @@ from .net import NetmanError, _run
 
 
 def ping(host: str, count: int = 4, interval: float = 0.2) -> dict:
+    """Run a ping command and return parsed summary metrics."""
     output = _run(["ping", "-c", str(count), "-i", str(interval), host])
     summary: dict[str, int | float | None] = {
         "transmitted": None,
@@ -41,6 +42,7 @@ def ping(host: str, count: int = 4, interval: float = 0.2) -> dict:
 
 
 def download_test(url: str, max_mb: int = 10) -> dict:
+    """Download data from a URL and return throughput metrics."""
     # Security: Only allow http/https URLs to prevent SSRF via file:// etc.
     if not url.lower().startswith(("http://", "https://")):
         raise NetmanError(f"Invalid URL scheme - only http/https allowed: {url}")

@@ -3,7 +3,7 @@ import argparse
 from .checks import download_test, ping
 from .config import Config
 from .net import NetmanError, apply_limit, clear_limit, get_default_interface
-from .state import load_state, save_state
+from .state import get_store, load_state, save_state
 from .tray import run_tray
 from .ui import build_app
 
@@ -23,6 +23,12 @@ def _cmd_ui(args: argparse.Namespace) -> None:
     if host is None:
         host = Config.get_server_bind()
 
+    # Determine port: CLI arg > ENV var > saved state > default
+    if args.port is not None:
+        port = args.port
+    else:
+        port = Config.get_port(state_store=get_store(), default=7863)
+
     # Security warning for non-localhost exposure
     if host not in ("127.0.0.1", "localhost") or args.share:
         print("⚠️  WARNUNG: UI wird extern exponiert!")
@@ -36,7 +42,7 @@ def _cmd_ui(args: argparse.Namespace) -> None:
     app = build_app()
     app.launch(
         server_name=host,
-        server_port=args.port,
+        server_port=port,
         share=args.share,
     )
 
@@ -95,6 +101,7 @@ def _cmd_tray(_args: argparse.Namespace) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the CLI argument parser."""
     parser = argparse.ArgumentParser(prog="cindergrace-netman")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -105,8 +112,8 @@ def build_parser() -> argparse.ArgumentParser:
     ui_parser.add_argument(
         "--port",
         type=int,
-        default=Config.PORT,
-        help=f"Server port (default: {Config.PORT})",
+        default=None,
+        help="Server port (default: from settings or 7863)",
     )
     ui_parser.add_argument("--share", action="store_true")
     ui_parser.set_defaults(func=_cmd_ui)
@@ -144,6 +151,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
+    """Run the CLI entry point."""
     parser = build_parser()
     args = parser.parse_args()
     try:

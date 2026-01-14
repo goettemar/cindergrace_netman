@@ -18,6 +18,7 @@ DEFAULT_STATE = {
     "ping_host": "8.8.8.8",
     "language": "en",  # Default language (en/de)
     "autostart": False,  # Start on login
+    "port": 7863,  # Server port (can be changed in Settings)
 }
 
 # XDG autostart desktop entry template
@@ -53,6 +54,14 @@ def load_state() -> dict:
 def save_state(state: dict) -> None:
     """Save state to disk."""
     _store.save(state)
+
+
+def get_store() -> XDGStateStore:
+    """Get the shared XDGStateStore instance.
+
+    Useful for passing to Config.get_port() for port priority resolution.
+    """
+    return _store
 
 
 # === Autostart functionality (Linux XDG) ===

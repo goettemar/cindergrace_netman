@@ -59,6 +59,8 @@ en:
   autostart_enabled: "Autostart enabled"
   autostart_disabled: "Autostart disabled"
   autostart_error: "Could not change autostart setting"
+  server_port: "Server Port"
+  port_restart_hint: "Port change requires restart"
   save_settings: "Save Settings"
   settings_saved: "Settings saved."
 
@@ -130,6 +132,8 @@ de:
   autostart_enabled: "Autostart aktiviert"
   autostart_disabled: "Autostart deaktiviert"
   autostart_error: "Autostart konnte nicht geaendert werden"
+  server_port: "Server-Port"
+  port_restart_hint: "Port-Aenderung erfordert Neustart"
   save_settings: "Einstellungen speichern"
   settings_saved: "Einstellungen gespeichert."
 

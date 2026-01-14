@@ -165,6 +165,7 @@ def test_default_state_keys():
         "ping_host",
         "language",
         "autostart",
+        "port",
     }
     assert expected_keys == set(DEFAULT_STATE.keys())
 

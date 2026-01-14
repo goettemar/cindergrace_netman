@@ -5,6 +5,7 @@ IFB_DEVICE = "ifb0"
 
 
 class NetmanError(RuntimeError):
+    """Domain error for network management operations."""
     pass
 
 
@@ -30,6 +31,7 @@ def _run_ignore(cmd: list[str]) -> None:
 
 
 def list_interfaces() -> list[str]:
+    """List network interface names from the system."""
     output = _run(["ip", "-o", "link", "show"])
     interfaces: list[str] = []
     for line in output.splitlines():
@@ -43,6 +45,7 @@ def list_interfaces() -> list[str]:
 
 
 def get_default_interface() -> str | None:
+    """Return the default network interface name, if available."""
     output = _run(["ip", "route", "show", "default"])
     for line in output.splitlines():
         match = re.search(r"\bdev\s+(\S+)", line)
@@ -121,6 +124,7 @@ def _setup_ifb() -> None:
 
 
 def apply_limit(iface: str, rate_mbit: float) -> None:
+    """Apply a download rate limit to the given interface."""
     if rate_mbit <= 0:
         raise NetmanError("Rate must be > 0")
     _setup_ifb()
@@ -171,6 +175,7 @@ def apply_limit(iface: str, rate_mbit: float) -> None:
 
 
 def clear_limit(iface: str) -> None:
+    """Remove any download rate limit from the given interface."""
     _run_ignore(["tc", "qdisc", "del", "dev", IFB_DEVICE, "root"])
     _run_ignore(["tc", "filter", "del", "dev", iface, "parent", "ffff:"])
     _run_ignore(["tc", "qdisc", "del", "dev", iface, "ingress"])

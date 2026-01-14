@@ -273,13 +273,18 @@ def _save_language(new_lang: str) -> None:
 
 
 def _save_settings(
-    dsl_speed: int, ping_host_val: str, download_url_val: str, new_lang: str
+    dsl_speed: int,
+    ping_host_val: str,
+    download_url_val: str,
+    port_val: int,
+    new_lang: str,
 ) -> str:
     """Save all settings to config."""
     state = load_state()
     state["base_mbit"] = int(dsl_speed)
     state["ping_host"] = ping_host_val
     state["download_url"] = download_url_val
+    state["port"] = int(port_val)
     state["language"] = new_lang
     save_state(state)
     return _("settings_saved")
@@ -357,11 +362,11 @@ def _toggle_autostart() -> tuple[str, gr.Button]:
 
 
 def _save_and_update(
-    dsl: int, ping_host_val: str, dl_url: str, new_lang: str
-) -> tuple[str, int, str, str, str]:
+    dsl: int, ping_host_val: str, dl_url: str, port_val: int, new_lang: str
+) -> tuple[str, int, str, str, int, str]:
     """Save settings and return updated values for state."""
-    msg = _save_settings(dsl, ping_host_val, dl_url, new_lang)
-    return msg, dsl, ping_host_val, dl_url, new_lang
+    msg = _save_settings(dsl, ping_host_val, dl_url, port_val, new_lang)
+    return msg, dsl, ping_host_val, dl_url, port_val, new_lang
 
 
 def _get_default_interface_value(state: dict, interface_names: list[str]) -> str:
@@ -489,6 +494,14 @@ def build_app() -> gr.Blocks:
                             ),
                             label=_("default_download_url"),
                         )
+                        settings_port = gr.Number(
+                            value=state.get("port", 7863),
+                            precision=0,
+                            minimum=1024,
+                            maximum=65535,
+                            label=_("server_port"),
+                            info=_("port_restart_hint"),
+                        )
                         autostart_label, autostart_variant = (
                             _get_autostart_button_props(is_autostart_enabled())
                         )
@@ -512,6 +525,7 @@ def build_app() -> gr.Blocks:
                     "download_url", "https://ash-speed.hetzner.com/100MB.bin"
                 )
             )
+            current_port = gr.State(value=state.get("port", 7863))
 
             # Initialize dynamic status on page load
             app.load(
@@ -552,6 +566,7 @@ def build_app() -> gr.Blocks:
                     settings_dsl,
                     settings_ping_host,
                     settings_download_url,
+                    settings_port,
                     lang_dropdown,
                 ],
                 outputs=[
@@ -559,6 +574,7 @@ def build_app() -> gr.Blocks:
                     current_dsl,
                     current_ping_host,
                     current_download_url,
+                    current_port,
                     lang,
                 ],
             )

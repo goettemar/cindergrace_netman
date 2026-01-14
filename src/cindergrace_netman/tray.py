@@ -53,6 +53,7 @@ def _open_ui(_icon: pystray.Icon, _item: pystray.MenuItem) -> None:
 
 
 def run_tray() -> None:
+    """Run the system tray icon loop."""
     state = load_state()
     iface = state["iface"] or get_default_interface()
     icon = pystray.Icon(
