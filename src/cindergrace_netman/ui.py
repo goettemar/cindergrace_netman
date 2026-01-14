@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
 import gradio as gr
 from cindergrace_common.ui import CSSVariables, GradioTheme
@@ -226,7 +227,9 @@ def _refresh_status(lang: str) -> tuple[str, gr.Dropdown]:
     choices = _get_interface_choices()
     interface_names = [c[1] for c in choices]
     default_iface = (
-        state["iface"] or get_default_interface() or (interface_names[0] if interface_names else "")
+        state["iface"]
+        or get_default_interface()
+        or (interface_names[0] if interface_names else "")
     )
     status = _format_status(lang)
     return status, gr.Dropdown(choices=choices, value=default_iface)
@@ -269,7 +272,9 @@ def _save_language(new_lang: str) -> None:
     save_state(state)
 
 
-def _save_settings(dsl_speed: int, ping_host_val: str, download_url_val: str, new_lang: str) -> str:
+def _save_settings(
+    dsl_speed: int, ping_host_val: str, download_url_val: str, new_lang: str
+) -> str:
     """Save all settings to config."""
     state = load_state()
     state["base_mbit"] = int(dsl_speed)
@@ -370,14 +375,17 @@ def _get_default_interface_value(state: dict, interface_names: list[str]) -> str
     return interface_names[0] if interface_names else ""
 
 
-def _get_toggle_button_props(enabled: bool) -> tuple[str, str]:
+ButtonVariant = Literal["primary", "secondary", "stop"]
+
+
+def _get_toggle_button_props(enabled: bool) -> tuple[str, ButtonVariant]:
     """Get label and variant for toggle button based on limit state."""
     if enabled:
         return _("disable_limit"), "stop"
     return _("enable_limit"), "primary"
 
 
-def _get_autostart_button_props(enabled: bool) -> tuple[str, str]:
+def _get_autostart_button_props(enabled: bool) -> tuple[str, ButtonVariant]:
     """Get label and variant for autostart button."""
     if enabled:
         return _("autostart_enabled"), "stop"
@@ -439,7 +447,9 @@ def build_app() -> gr.Blocks:
                     with gr.Group(elem_classes=["panel"]):
                         gr.Markdown(lambda: f"## {_('check_connection')}")
                         with gr.Row():
-                            ping_count = gr.Slider(1, 20, value=6, step=1, label=_("packets"))
+                            ping_count = gr.Slider(
+                                1, 20, value=6, step=1, label=_("packets")
+                            )
                             ping_interval = gr.Slider(
                                 0.2, 1.0, value=0.3, step=0.1, label=_("interval_s")
                             )
@@ -447,7 +457,9 @@ def build_app() -> gr.Blocks:
                         ping_out = gr.Markdown()
 
                         with gr.Row():
-                            dl_size = gr.Slider(1, 100, value=10, step=1, label=_("max_mb"))
+                            dl_size = gr.Slider(
+                                1, 100, value=10, step=1, label=_("max_mb")
+                            )
                             dl_btn = gr.Button(_("download_test"))
                         dl_out = gr.Markdown()
 
@@ -472,26 +484,33 @@ def build_app() -> gr.Blocks:
                         )
                         settings_download_url = gr.Textbox(
                             value=state.get(
-                                "download_url", "https://ash-speed.hetzner.com/100MB.bin"
+                                "download_url",
+                                "https://ash-speed.hetzner.com/100MB.bin",
                             ),
                             label=_("default_download_url"),
                         )
-                        autostart_label, autostart_variant = _get_autostart_button_props(
-                            is_autostart_enabled()
+                        autostart_label, autostart_variant = (
+                            _get_autostart_button_props(is_autostart_enabled())
                         )
                         with gr.Row():
                             gr.Markdown(f"**{_('autostart')}:** {_('autostart_desc')}")
-                        autostart_btn = gr.Button(autostart_label, variant=autostart_variant)
+                        autostart_btn = gr.Button(
+                            autostart_label, variant=autostart_variant
+                        )
                         autostart_out = gr.Markdown()
 
-                        save_settings_btn = gr.Button(_("save_settings"), variant="primary")
+                        save_settings_btn = gr.Button(
+                            _("save_settings"), variant="primary"
+                        )
                         settings_out = gr.Markdown()
 
             # Hidden state for settings values (used by network tab)
             current_dsl = gr.State(value=state["base_mbit"])
             current_ping_host = gr.State(value=state.get("ping_host", "8.8.8.8"))
             current_download_url = gr.State(
-                value=state.get("download_url", "https://ash-speed.hetzner.com/100MB.bin")
+                value=state.get(
+                    "download_url", "https://ash-speed.hetzner.com/100MB.bin"
+                )
             )
 
             # Initialize dynamic status on page load

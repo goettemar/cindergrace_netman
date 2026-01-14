@@ -75,7 +75,9 @@ def _cmd_status(_args: argparse.Namespace) -> None:
     status = "active" if state["enabled"] else "off"
     print(f"Status: {status}")
     print(f"Interface: {iface}")
-    print(f"Limit: {state['percent']}% of {state['base_mbit']} Mbit/s = {rate:.2f} Mbit/s")
+    print(
+        f"Limit: {state['percent']}% of {state['base_mbit']} Mbit/s = {rate:.2f} Mbit/s"
+    )
 
 
 def _cmd_ping(args: argparse.Namespace) -> None:
@@ -97,9 +99,14 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     ui_parser = subparsers.add_parser("ui", help="Start Gradio UI")
-    ui_parser.add_argument("--host", default=None, help="Server host (env: NETMAN_ALLOW_REMOTE)")
     ui_parser.add_argument(
-        "--port", type=int, default=Config.PORT, help=f"Server port (default: {Config.PORT})"
+        "--host", default=None, help="Server host (env: NETMAN_ALLOW_REMOTE)"
+    )
+    ui_parser.add_argument(
+        "--port",
+        type=int,
+        default=Config.PORT,
+        help=f"Server port (default: {Config.PORT})",
     )
     ui_parser.add_argument("--share", action="store_true")
     ui_parser.set_defaults(func=_cmd_ui)
@@ -124,7 +131,9 @@ def build_parser() -> argparse.ArgumentParser:
     ping_parser.set_defaults(func=_cmd_ping)
 
     download_parser = subparsers.add_parser("download", help="Run download test")
-    download_parser.add_argument("--url", default="https://ash-speed.hetzner.com/100MB.bin")
+    download_parser.add_argument(
+        "--url", default="https://ash-speed.hetzner.com/100MB.bin"
+    )
     download_parser.add_argument("--max-mb", type=int, default=10)
     download_parser.set_defaults(func=_cmd_download)
 

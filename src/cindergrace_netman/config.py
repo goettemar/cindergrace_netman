@@ -44,7 +44,9 @@ class Config(BaseConfig, SecurityMixin, BrandingMixin):
     def get_env_docs(cls) -> dict[str, str]:
         """Document available environment variables."""
         docs = cls.get_security_docs()
-        docs.update({
-            "NETMAN_PORT": "Server port (default: 7863)",
-        })
+        docs.update(
+            {
+                "NETMAN_PORT": "Server port (default: 7863)",
+            }
+        )
         return docs

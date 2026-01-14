@@ -7,7 +7,7 @@ from .net import NetmanError, _run
 
 def ping(host: str, count: int = 4, interval: float = 0.2) -> dict:
     output = _run(["ping", "-c", str(count), "-i", str(interval), host])
-    summary = {
+    summary: dict[str, int | float | None] = {
         "transmitted": None,
         "received": None,
         "loss_percent": None,
@@ -49,7 +49,8 @@ def download_test(url: str, max_mb: int = 10) -> dict:
     start = time.monotonic()
     bytes_read = 0
     try:
-        with urllib.request.urlopen(url, timeout=10) as response:
+        # URL scheme validated above - nosec for bandit B310
+        with urllib.request.urlopen(url, timeout=10) as response:  # nosec B310
             while bytes_read < max_bytes:
                 chunk = response.read(min(1024 * 256, max_bytes - bytes_read))
                 if not chunk:
