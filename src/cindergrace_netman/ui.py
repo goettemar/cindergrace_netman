@@ -8,6 +8,8 @@ import gradio as gr
 from gradio_i18n import Translate
 from gradio_i18n import gettext as _
 
+from cindergrace_common.ui import CSSVariables, GradioTheme
+
 from .checks import download_test, ping
 from .net import (
     NetmanError,
@@ -27,43 +29,9 @@ from .state import (
 # Translation file
 TRANSLATIONS = Path(__file__).parent / "translations" / "ui.yaml"
 
-# Cindergrace Unified Theme - LIGHT
-CSS = """
+# Additional CSS for NetMan-specific styling (inputs, checkboxes, etc.)
+_CUSTOM_CSS = """
 @import url("https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Nunito:wght@400;500;600&display=swap");
-
-:root {
-    --cg-blue-dark: #1E5AA8;
-    --cg-blue-light: #7CC8FF;
-    --cg-blue-hover: #2d6fc0;
-    --cg-bg-primary: #f8f9fc;
-    --cg-bg-secondary: #ffffff;
-    --cg-bg-card: #ffffff;
-    --cg-bg-input: #f4f6f8;
-    --cg-text-primary: #1c2321;
-    --cg-text-secondary: #4a5568;
-    --cg-text-muted: #718096;
-    --cg-success: #2ecc71;
-    --cg-warning: #f39c12;
-    --cg-error: #e74c3c;
-    --cg-font-size-base: 17px;
-    --cg-font-size-label: 16px;
-    --cg-border-radius: 12px;
-    --cg-max-width: 1000px;
-    --cg-spacing: 20px;
-}
-
-body, .gradio-container {
-    background: linear-gradient(135deg, var(--cg-bg-primary) 0%, #eef1f5 100%) !important;
-    color: var(--cg-text-primary) !important;
-    font-family: "Nunito", "Segoe UI", system-ui, sans-serif !important;
-    font-size: var(--cg-font-size-base) !important;
-}
-
-.gradio-container {
-    max-width: var(--cg-max-width) !important;
-    margin: 0 auto !important;
-    padding: var(--cg-spacing) !important;
-}
 
 .logo-header {
     display: flex;
@@ -73,29 +41,6 @@ body, .gradio-container {
 }
 
 .logo-header svg { width: 48px; height: 48px; }
-
-h1, h2, h3, .markdown-text h1, .markdown-text h2, .markdown-text h3 {
-    font-family: "Comfortaa", sans-serif !important;
-    color: var(--cg-blue-dark) !important;
-    font-weight: 600 !important;
-}
-
-h1, .markdown-text h1 { font-size: 2em !important; }
-h2, .markdown-text h2 {
-    font-size: 1.4em !important;
-    border-bottom: 2px solid var(--cg-blue-light);
-    padding-bottom: 0.3em;
-    margin-top: 1em !important;
-}
-
-.panel, .gr-group, .gr-box, .block {
-    background: var(--cg-bg-card) !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: var(--cg-border-radius) !important;
-    padding: var(--cg-spacing) !important;
-    box-shadow: 0 4px 16px rgba(30, 90, 168, 0.08) !important;
-    margin-bottom: var(--cg-spacing) !important;
-}
 
 label, .gr-input-label, .label-wrap, .label-wrap span,
 .gr-box label, .gr-form label, span.svelte-1gfkn6j,
@@ -123,29 +68,12 @@ input:focus, textarea:focus, select:focus {
 }
 
 button, .gr-button {
-    font-family: "Nunito", sans-serif !important;
-    font-size: var(--cg-font-size-base) !important;
-    font-weight: 600 !important;
-    border-radius: 8px !important;
-    padding: 10px 24px !important;
     transition: all 0.2s ease !important;
-}
-
-button.primary, .gr-button.primary, button[variant="primary"] {
-    background: linear-gradient(135deg, var(--cg-blue-dark) 0%, var(--cg-blue-hover) 100%) !important;
-    color: white !important;
-    border: none !important;
 }
 
 button.primary:hover, .gr-button.primary:hover {
     transform: translateY(-1px) !important;
     box-shadow: 0 4px 12px rgba(30, 90, 168, 0.3) !important;
-}
-
-button.secondary, .gr-button.secondary {
-    background: white !important;
-    color: var(--cg-blue-dark) !important;
-    border: 2px solid var(--cg-blue-dark) !important;
 }
 
 button.secondary:hover { background: var(--cg-bg-input) !important; }
@@ -172,40 +100,14 @@ input[type="checkbox"] {
     width: 18px !important;
     height: 18px !important;
 }
-
-.app-header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 16px;
-}
-
-.app-header svg {
-    width: 48px;
-    height: 48px;
-    flex-shrink: 0;
-}
-
-.app-header h1 {
-    margin: 0 !important;
-    font-size: 1.8em !important;
-}
-
-.app-header .subtitle {
-    color: var(--cg-text-muted);
-    font-size: 0.95em;
-    margin-top: 2px;
-}
 """
 
-LOGO_SVG = """<svg width="48" height="48" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" rx="96" fill="white"/>
-  <circle cx="256" cy="256" r="200" stroke="#7CC8FF" stroke-width="36" fill="none"/>
-  <path d="M 56 256 L 56 490" stroke="#7CC8FF" stroke-width="36" stroke-linecap="round"/>
-  <path d="M 420 256 A 164 164 0 1 1 338 114" stroke="#1E5AA8" stroke-width="36" stroke-linecap="round"/>
-  <path d="M 420 256 L 320 256" stroke="#1E5AA8" stroke-width="36" stroke-linecap="round"/>
-  <path d="M 332 180 A 108 108 0 1 0 332 332" stroke="#7CC8FF" stroke-width="28" stroke-linecap="round"/>
-</svg>"""
+# Theme configuration using cindergrace_common
+_theme = GradioTheme(
+    title="CinderGrace Projects - NetMan",
+    variables=CSSVariables(max_width="1000px"),
+    custom_css=_CUSTOM_CSS,
+)
 
 
 def _get_interface_choices() -> list[tuple[str, str]]:
@@ -222,11 +124,11 @@ def _get_interface_choices() -> list[tuple[str, str]]:
         if speed:
             label_parts.append(f"{speed} Mbit/s")
         if state == "up":
-            label_parts.append("✓")
+            label_parts.append("\u2713")
         elif state == "down":
-            label_parts.append("✗")
+            label_parts.append("\u2717")
         if is_default:
-            label_parts.append("⬤")
+            label_parts.append("\u2b24")
 
         label = " | ".join(label_parts)
         choices.append((label, name))
@@ -262,14 +164,14 @@ def _format_status(lang: str) -> str:
     base = state["base_mbit"]
 
     default_iface = get_default_interface()
-    route_marker = f"⬤ {_('default_route')}" if iface == default_iface else ""
+    route_marker = f"\u2b24 {_('default_route')}" if iface == default_iface else ""
 
     if state["enabled"]:
         percent = state["percent"]
         rate = base * percent / 100
-        status_text = f"🔴 **{_('limit')} {_('status_active')}:** {percent}% = {rate:.2f} Mbit/s"
+        status_text = f"\U0001f534 **{_('limit')} {_('status_active')}:** {percent}% = {rate:.2f} Mbit/s"
     else:
-        status_text = f"🟢 {_('no_limit')}"
+        status_text = f"\U0001f7e2 {_('no_limit')}"
 
     return (
         f"**{_('status')}:** {status_text}  |  "
@@ -498,21 +400,14 @@ def build_app() -> gr.Blocks:
     saved_lang = state.get("language", "en")
     tab_network_label, tab_settings_label = _get_tab_labels(saved_lang)
 
-    with gr.Blocks(css=CSS, title="CinderGrace Projects - NetMan") as app:
+    with gr.Blocks(css=_theme.css(), title="CinderGrace Projects - NetMan") as app:
         with Translate(
             str(TRANSLATIONS),
             placeholder_langs=["en", "de"],
         ) as lang:
             lang.value = saved_lang
 
-            gr.HTML(f"""
-            <div class="app-header">
-                {LOGO_SVG}
-                <div>
-                    <h1 style="margin:0 !important; font-size:1.8em !important;">CinderGrace Projects - NetMan</h1>
-                </div>
-            </div>
-            """)
+            gr.HTML(_theme.header_html())
 
             with gr.Tabs():
                 with gr.TabItem(tab_network_label):
