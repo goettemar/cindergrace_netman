@@ -51,6 +51,11 @@ pip install -e .
 
 The UI opens at `http://localhost:7863`
 
+## User Guides
+
+- German: `docs/USER_GUIDE_de.md`
+- English: `docs/USER_GUIDE_en.md`
+
 ### Command Line
 
 ```bash
@@ -125,6 +130,5 @@ This project is licensed under the [PolyForm Noncommercial License 1.0.0](LICENS
 ---
 
 Created 2026-01-03 | [goettemar](https://github.com/goettemar)
-
 
 
