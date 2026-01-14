@@ -1,6 +1,7 @@
 import argparse
 
 from .checks import download_test, ping
+from .config import Config
 from .net import NetmanError, apply_limit, clear_limit, get_default_interface
 from .state import load_state, save_state
 from .tray import run_tray
@@ -17,8 +18,13 @@ def _resolve_iface(iface: str | None) -> str:
 
 
 def _cmd_ui(args: argparse.Namespace) -> None:
+    # Determine host: CLI arg overrides env var, env var overrides default
+    host = args.host
+    if host is None:
+        host = Config.get_server_bind()
+
     # Security warning for non-localhost exposure
-    if args.host not in ("127.0.0.1", "localhost") or args.share:
+    if host not in ("127.0.0.1", "localhost") or args.share:
         print("⚠️  WARNUNG: UI wird extern exponiert!")
         print("   Diese App laeuft mit Root-Rechten und hat KEINE Authentisierung.")
         print("   Jeder im Netzwerk kann auf dein System zugreifen!")
@@ -29,7 +35,7 @@ def _cmd_ui(args: argparse.Namespace) -> None:
 
     app = build_app()
     app.launch(
-        server_name=args.host,
+        server_name=host,
         server_port=args.port,
         share=args.share,
     )
@@ -91,8 +97,8 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     ui_parser = subparsers.add_parser("ui", help="Start Gradio UI")
-    ui_parser.add_argument("--host", default="127.0.0.1")
-    ui_parser.add_argument("--port", type=int, default=7863)  # See gradio_ports.json
+    ui_parser.add_argument("--host", default=None, help="Server host (default: from NETMAN_ALLOW_REMOTE)")
+    ui_parser.add_argument("--port", type=int, default=Config.PORT, help=f"Server port (default: {Config.PORT}, env: NETMAN_PORT)")
     ui_parser.add_argument("--share", action="store_true")
     ui_parser.set_defaults(func=_cmd_ui)
 
