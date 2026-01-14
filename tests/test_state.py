@@ -29,10 +29,35 @@ def temp_config_dir(tmp_path):
 
 
 @pytest.fixture
-def mock_state_path(temp_config_dir):
-    """Mock state_path to use temp directory."""
+def mock_store(temp_config_dir):
+    """Mock the _store to use temp directory."""
     state_file = temp_config_dir / "state.json"
-    with patch("cindergrace_netman.state.state_path", return_value=state_file):
+
+    # Create a mock store that uses temp directory
+    mock = MagicMock()
+    mock.get_path.return_value = state_file
+
+    def mock_load():
+        if not state_file.exists():
+            return dict(DEFAULT_STATE)
+        try:
+            with open(state_file, encoding="utf-8") as f:
+                data = json.load(f)
+            result = dict(DEFAULT_STATE)
+            result.update(data)
+            return result
+        except (json.JSONDecodeError, OSError):
+            return dict(DEFAULT_STATE)
+
+    def mock_save(data):
+        state_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(state_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+
+    mock.load.side_effect = mock_load
+    mock.save.side_effect = mock_save
+
+    with patch("cindergrace_netman.state._store", mock):
         yield state_file
 
 
@@ -43,7 +68,7 @@ def test_state_path_returns_path():
     assert result.name == "state.json"
 
 
-def test_load_state_returns_defaults_when_no_file(mock_state_path):
+def test_load_state_returns_defaults_when_no_file(mock_store):
     """Test that load_state returns defaults when file doesn't exist."""
     state = load_state()
     assert state["percent"] == DEFAULT_STATE["percent"]
@@ -51,7 +76,7 @@ def test_load_state_returns_defaults_when_no_file(mock_state_path):
     assert state["enabled"] == DEFAULT_STATE["enabled"]
 
 
-def test_load_state_reads_existing_file(mock_state_path):
+def test_load_state_reads_existing_file(mock_store):
     """Test that load_state reads existing state file."""
     custom_state = {
         "percent": 75,
@@ -59,7 +84,7 @@ def test_load_state_reads_existing_file(mock_state_path):
         "enabled": True,
         "iface": "eth0",
     }
-    mock_state_path.write_text(json.dumps(custom_state))
+    mock_store.write_text(json.dumps(custom_state))
 
     state = load_state()
     assert state["percent"] == 75
@@ -68,39 +93,39 @@ def test_load_state_reads_existing_file(mock_state_path):
     assert state["iface"] == "eth0"
 
 
-def test_load_state_merges_with_defaults(mock_state_path):
+def test_load_state_merges_with_defaults(mock_store):
     """Test that load_state merges partial state with defaults."""
     partial_state = {"percent": 50}
-    mock_state_path.write_text(json.dumps(partial_state))
+    mock_store.write_text(json.dumps(partial_state))
 
     state = load_state()
     assert state["percent"] == 50
     assert state["base_mbit"] == DEFAULT_STATE["base_mbit"]
 
 
-def test_save_state_creates_file(mock_state_path):
+def test_save_state_creates_file(mock_store):
     """Test that save_state creates state file."""
     state = {"percent": 80, "base_mbit": 100}
     save_state(state)
 
-    assert mock_state_path.exists()
-    saved = json.loads(mock_state_path.read_text())
+    assert mock_store.exists()
+    saved = json.loads(mock_store.read_text())
     assert saved["percent"] == 80
 
 
-def test_save_state_overwrites_existing(mock_state_path):
+def test_save_state_overwrites_existing(mock_store):
     """Test that save_state overwrites existing file."""
-    mock_state_path.write_text(json.dumps({"percent": 10}))
+    mock_store.write_text(json.dumps({"percent": 10}))
 
     save_state({"percent": 90})
 
-    saved = json.loads(mock_state_path.read_text())
+    saved = json.loads(mock_store.read_text())
     assert saved["percent"] == 90
 
 
-def test_load_state_handles_invalid_json(mock_state_path):
+def test_load_state_handles_invalid_json(mock_store):
     """Test that load_state handles corrupted JSON gracefully."""
-    mock_state_path.write_text("not valid json {{{")
+    mock_store.write_text("not valid json {{{")
 
     state = load_state()
     # Should return defaults on error
@@ -131,7 +156,16 @@ def test_desktop_entry_format():
 
 def test_default_state_keys():
     """Test DEFAULT_STATE has all expected keys."""
-    expected_keys = {"enabled", "percent", "base_mbit", "iface", "download_url", "ping_host", "language", "autostart"}
+    expected_keys = {
+        "enabled",
+        "percent",
+        "base_mbit",
+        "iface",
+        "download_url",
+        "ping_host",
+        "language",
+        "autostart",
+    }
     assert expected_keys == set(DEFAULT_STATE.keys())
 
 

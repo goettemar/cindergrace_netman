@@ -1,7 +1,14 @@
-import json
-import os
+"""State management for Cindergrace NetMan.
+
+Uses cindergrace_common.XDGStateStore for persistence.
+"""
+
+import shutil
 from pathlib import Path
 
+from cindergrace_common import XDGStateStore
+
+# App-specific defaults
 DEFAULT_STATE = {
     "enabled": False,
     "percent": 100,
@@ -13,7 +20,7 @@ DEFAULT_STATE = {
     "autostart": False,  # Start on login
 }
 
-# XDG autostart desktop entry
+# XDG autostart desktop entry template
 DESKTOP_ENTRY = """[Desktop Entry]
 Type=Application
 Name=CinderGrace NetMan
@@ -26,35 +33,36 @@ Categories=Network;System;
 X-GNOME-Autostart-enabled=true
 """
 
+# Shared store instance
+_store = XDGStateStore(
+    app_name="cindergrace_netman",
+    defaults=DEFAULT_STATE,
+)
+
 
 def state_path() -> Path:
-    config_root = Path(os.getenv("XDG_CONFIG_HOME", Path.home() / ".config"))
-    return config_root / "cindergrace_netman" / "state.json"
+    """Get path to state file."""
+    return _store.get_path()
 
 
 def load_state() -> dict:
-    path = state_path()
-    if not path.exists():
-        return DEFAULT_STATE.copy()
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return DEFAULT_STATE.copy()
-    merged = DEFAULT_STATE.copy()
-    merged.update({k: data.get(k, v) for k, v in DEFAULT_STATE.items()})
-    return merged
+    """Load state from disk, merged with defaults."""
+    return _store.load()
 
 
 def save_state(state: dict) -> None:
-    path = state_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
+    """Save state to disk."""
+    _store.save(state)
+
+
+# === Autostart functionality (Linux XDG) ===
 
 
 def autostart_path() -> Path:
     """Path to XDG autostart desktop entry."""
-    config_root = Path(os.getenv("XDG_CONFIG_HOME", Path.home() / ".config"))
-    return config_root / "autostart" / "cindergrace-netman.desktop"
+    from cindergrace_common.state import get_xdg_config_home
+
+    return get_xdg_config_home() / "autostart" / "cindergrace-netman.desktop"
 
 
 def get_start_script_path() -> Path:
@@ -67,8 +75,6 @@ def get_start_script_path() -> Path:
     if start_sh.exists():
         return start_sh
     # Fallback: check if installed via pip, use the entry point
-    import shutil
-
     entry_point = shutil.which("cindergrace-netman")
     if entry_point:
         return Path(entry_point)

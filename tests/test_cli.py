@@ -60,7 +60,8 @@ class TestBuildParser:
         parser = build_parser()
         args = parser.parse_args(["ui"])
         assert args.command == "ui"
-        assert args.host == "127.0.0.1"
+        # host defaults to None, resolved via Config.get_server_bind()
+        assert args.host is None
         assert args.port == 7863
         assert args.share is False
 
