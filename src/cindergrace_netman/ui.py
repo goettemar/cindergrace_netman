@@ -5,10 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import gradio as gr
+from cindergrace_common.ui import CSSVariables, GradioTheme
 from gradio_i18n import Translate
 from gradio_i18n import gettext as _
-
-from cindergrace_common.ui import CSSVariables, GradioTheme
 
 from .checks import download_test, ping
 from .net import (
@@ -169,7 +168,10 @@ def _format_status(lang: str) -> str:
     if state["enabled"]:
         percent = state["percent"]
         rate = base * percent / 100
-        status_text = f"\U0001f534 **{_('limit')} {_('status_active')}:** {percent}% = {rate:.2f} Mbit/s"
+        status_text = (
+            f"\U0001f534 **{_('limit')} {_('status_active')}:** "
+            f"{percent}% = {rate:.2f} Mbit/s"
+        )
     else:
         status_text = f"\U0001f7e2 {_('no_limit')}"
 

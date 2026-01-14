@@ -74,9 +74,9 @@ python_files = "test_*.py"
 [tool.coverage.run]
 source = ["src/cindergrace_netman"]
 omit = [
-    "src/cindergrace_netman/ui.py",    # Gradio UI nicht unit-testbar
-    "src/cindergrace_netman/cli.py",   # CLI benötigt Integration-Tests
-    "src/cindergrace_netman/tray.py",  # System tray nicht testbar
+    "src/cindergrace_netman/ui.py",    # Gradio UI not unit-testable
+    "src/cindergrace_netman/cli.py",   # CLI requires integration tests
+    "src/cindergrace_netman/tray.py",  # System tray not testable
 ]
 
 [tool.coverage.report]

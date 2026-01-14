@@ -8,8 +8,8 @@ from pathlib import Path
 
 from cindergrace_common import (
     BaseConfig,
-    SecurityMixin,
     BrandingMixin,
+    SecurityMixin,
     env_int,
 )
 

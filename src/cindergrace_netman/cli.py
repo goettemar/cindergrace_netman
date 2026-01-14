@@ -97,8 +97,10 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     ui_parser = subparsers.add_parser("ui", help="Start Gradio UI")
-    ui_parser.add_argument("--host", default=None, help="Server host (default: from NETMAN_ALLOW_REMOTE)")
-    ui_parser.add_argument("--port", type=int, default=Config.PORT, help=f"Server port (default: {Config.PORT}, env: NETMAN_PORT)")
+    ui_parser.add_argument("--host", default=None, help="Server host (env: NETMAN_ALLOW_REMOTE)")
+    ui_parser.add_argument(
+        "--port", type=int, default=Config.PORT, help=f"Server port (default: {Config.PORT})"
+    )
     ui_parser.add_argument("--share", action="store_true")
     ui_parser.set_defaults(func=_cmd_ui)
 
